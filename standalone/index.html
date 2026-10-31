@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MKT202 Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=2" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="header-inner">
+          <div class="header-row">
+            <div class="brand-block">
+              <div class="logo" aria-hidden="true">M</div>
+              <div>
+                <p class="brand-title">MKT202 Study</p>
+                <p class="brand-sub">Marketing Management · Jul ’26 summary</p>
+              </div>
+            </div>
+            <div id="countdown" class="countdown" aria-live="polite"></div>
+          </div>
+          <nav class="tabs" aria-label="Main">
+            <a href="#/" data-route="#/">Home</a>
+            <a href="#/study" data-route="#/study">Study</a>
+            <a href="#/quiz" data-route="#/quiz">Quiz</a>
+            <a href="#/flashcards" data-route="#/flashcards">Flashcards</a>
+            <a href="#/practice" data-route="#/practice">Practice</a>
+          </nav>
+        </div>
+      </header>
+      <main id="view">
+        <p class="lead" style="padding: 2rem">Loading…</p>
+      </main>
+      <footer>
+        Content aligned to MKT202 July ’26 concept summary · Also revise
+        iSmartGuide, Kotler 16e &amp; past papers
+      </footer>
+    </div>
+    <script src="data.js?v=2"></script>
+    <script src="app.js?v=2"></script>
+  </body>
+</html>
