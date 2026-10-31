@@ -4,13 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MKT202 Study</title>
+    <script>
+      (function () {
+        if (!location.hostname.endsWith("github.io")) return;
+        var segments = location.pathname.split("/").filter(Boolean);
+        if (segments.length === 0) return;
+        var base = document.createElement("base");
+        base.href = "/" + segments[0] + "/";
+        document.head.appendChild(base);
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <div id="app">
@@ -43,7 +53,7 @@
         iSmartGuide, Kotler 16e &amp; past papers
       </footer>
     </div>
-    <script src="data.js?v=2"></script>
-    <script src="app.js?v=2"></script>
+    <script src="data.js?v=3"></script>
+    <script src="app.js?v=3"></script>
   </body>
 </html>

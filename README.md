@@ -37,3 +37,13 @@ npm run dev
 Progress is stored in `localStorage` on your device.
 
 Also revise: iSmartGuide, Kotler 16e, seminar slides, handouts, and past papers.
+
+## GitHub Pages
+
+Live site: **https://ikmaal.github.io/mkt202/**
+
+1. In the repo on GitHub: **Settings → Pages → Build and deployment → Source** → choose **GitHub Actions** (not “Deploy from branch / root”).
+2. Push to `main` — the workflow deploys the **`standalone/`** folder only (not the Vite dev files at repo root).
+3. Wait for the **Deploy GitHub Pages** action to finish, then hard-refresh the site.
+
+If you previously deployed from **branch `main` / root**, the page was blank because root `index.html` is the unfinished Vite template.
