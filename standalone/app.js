@@ -9,10 +9,16 @@ function loadProgress() {
       sectionsRead: {},
       flashcardKnown: {},
       quizBest: {},
+      unitQuizBest: {},
       ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
     };
   } catch {
-    return { sectionsRead: {}, flashcardKnown: {}, quizBest: {} };
+    return {
+      sectionsRead: {},
+      flashcardKnown: {},
+      quizBest: {},
+      unitQuizBest: {},
+    };
   }
 }
 
@@ -48,23 +54,43 @@ function renderList(items) {
   return `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
 }
 
+const UNIT_THEME = {
+  1: "unit-purple",
+  2: "unit-peach",
+  3: "unit-lavender",
+  4: "unit-coral",
+  5: "unit-indigo",
+  6: "unit-mint",
+};
+
+function parseStudyHash(hash) {
+  const m = hash.match(/^#\/study\/(\d+)(?:\/(quiz))?$/);
+  if (!m) return null;
+  return { id: Number(m[1]), quiz: m[2] === "quiz" };
+}
+
+function questionsForUnit(unitId) {
+  return DATA.quizQuestions.filter((q) => q.unitId === unitId);
+}
+
 function updateChrome(route) {
+  const { pct } = sectionProgress();
+  const pctEl = document.getElementById("header-pct");
+  if (pctEl) pctEl.textContent = `${pct}%`;
+
   const days = daysUntilExam(DATA.examDate);
   const el = document.getElementById("countdown");
   if (el) {
-    el.innerHTML =
-      days > 0
-        ? `<span class="dot"></span><span>${days}</span> days to exam`
-        : days === 0
-          ? "Exam day — good luck!"
-          : "Exam period";
+    el.textContent =
+      days > 0 ? `${days}d to exam` : days === 0 ? "Exam day!" : "Post-exam";
   }
-  document.querySelectorAll("nav.tabs a[data-route]").forEach((a) => {
+  document.querySelectorAll(".bottom-nav a[data-route]").forEach((a) => {
     const r = a.getAttribute("data-route");
     const active =
       r === route ||
       (r === "#/" && (route === "#/" || route === "")) ||
-      (r !== "#/" && route.startsWith(r) && r !== "#/");
+      (r === "#/study" && route === "#/study") ||
+      (r !== "#/" && r !== "#/study" && route === r);
     a.classList.toggle("active", active);
   });
 }
@@ -89,27 +115,33 @@ function sectionProgress() {
 function homeView() {
   const { total, done, pct } = sectionProgress();
   const cardsKnown = Object.values(progress.flashcardKnown).filter(Boolean).length;
+  const unitsPassed = Object.keys(progress.unitQuizBest || {}).filter(
+    (k) => (progress.unitQuizBest[k] ?? 0) >= 70,
+  ).length;
   return shell(
     `
-    <section class="hero">
-      <p class="hero-label">Exam · 11 November 2026</p>
-      <h1>Your MKT202 revision hub</h1>
-      <p>Structured notes from your semester summary, plus quizzes, flashcards, and case-style practice.</p>
+    <section class="hero-card">
+      <p class="tag">MKT202 · Exam ready</p>
+      <h1>Marketing revision adventure</h1>
+      <p>Read each unit, then crush the checkpoint quiz at the end to lock it in.</p>
     </section>
-    <div class="grid-3">
-      <div class="card"><p class="stat-label">Study progress</p><p class="stat-value">${pct}%</p><p>${done}/${total} sections</p></div>
-      <div class="card"><p class="stat-label">Flashcards mastered</p><p class="stat-value">${cardsKnown}</p><p>of ${DATA.flashcards?.length ?? 0} cards</p></div>
-      <div class="card"><p class="stat-label">Quiz pool</p><p class="stat-value">${DATA.quizQuestions?.length ?? 0}</p><p>multiple-choice items</p></div>
+    <div class="stat-row">
+      <div class="stat-pill"><p class="stat-label">Sections</p><p class="stat-value">${pct}%</p><p class="lead">${done}/${total} read</p></div>
+      <div class="stat-pill"><p class="stat-label">Flashcards</p><p class="stat-value">${cardsKnown}</p><p class="lead">mastered</p></div>
+      <div class="stat-pill wide"><span><p class="stat-label">Unit quizzes passed (70%+)</p><p class="stat-value">${unitsPassed} / 6</p></span><span style="font-size:2rem">🎯</span></div>
     </div>
-    <h2 style="margin-top:2.5rem;font-size:1.125rem;color:#0f172a">Units</h2>
+    <h2 class="section-heading">Jump into a unit</h2>
     ${DATA.units
       .map(
         (u) =>
-          `<a class="unit-link" href="#/study/${u.id}"><span><strong>${esc(u.title)}</strong> — ${esc(u.subtitle)}</span><span>→</span></a>`,
+          `<a class="course-card ${UNIT_THEME[u.id] || "unit-purple"}" href="#/study/${u.id}">
+            <p class="unit-tag">${esc(u.title)}</p>
+            <h3>${esc(u.subtitle)}</h3>
+            <p class="meta">${questionsForUnit(u.id).length} checkpoint questions</p>
+            <span class="go-btn" aria-hidden="true">→</span>
+          </a>`,
       )
       .join("")}
-    <h2 style="margin-top:2rem;font-size:1.125rem;color:#0f172a">Also revise (per module)</h2>
-    <ul>${DATA.revisionSources.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>
   `,
     "#/",
   );
@@ -118,15 +150,17 @@ function homeView() {
 function studyListView() {
   return shell(
     `
-    <h1 class="page-title">Study materials</h1>
-    <p class="lead">Mark sections as read to track progress.</p>
+    <h1 class="page-title">My units</h1>
+    <p class="lead">Tap a unit → read → finish with the checkpoint quiz.</p>
     ${DATA.units
       .map((u) => {
         const d = u.sections.filter((s) => progress.sectionsRead[`${u.id}-${s.id}`]).length;
-        return `<a class="unit-link" href="#/study/${u.id}" style="flex-direction:column;align-items:flex-start">
-          <strong>${esc(u.title)}</strong>
-          <span>${esc(u.subtitle)}</span>
-          <span style="font-size:0.75rem;color:#64748b">${d}/${u.sections.length} read · ${esc(u.textbook)}</span>
+        const best = progress.unitQuizBest?.[String(u.id)];
+        return `<a class="course-card ${UNIT_THEME[u.id] || "unit-purple"}" href="#/study/${u.id}">
+          <p class="unit-tag">${esc(u.title)} · ${d}/${u.sections.length} read</p>
+          <h3>${esc(u.subtitle)}</h3>
+          <p class="meta">${best != null ? `Quiz best: ${best}%` : "Quiz not taken yet"}</p>
+          <span class="go-btn" aria-hidden="true">→</span>
         </a>`;
       })
       .join("")}
@@ -157,18 +191,112 @@ function unitView(id) {
     .join("");
   const prev = DATA.units.find((x) => x.id === id - 1);
   const next = DATA.units.find((x) => x.id === id + 1);
+  const qCount = questionsForUnit(id).length;
+  const best = progress.unitQuizBest?.[String(id)];
   return shell(
     `
-    <a href="#/study">← All units</a>
-    <p style="color:#2563eb;font-size:0.75rem;font-weight:600;text-transform:uppercase;margin-top:1rem">${esc(u.title)}</p>
+    <a class="back-link" href="#/study">← My units</a>
+    <p class="unit-tag" style="margin:0;color:var(--purple);font-weight:800">${esc(u.title)}</p>
     <h1 class="page-title">${esc(u.subtitle)}</h1>
     <p class="lead">${esc(u.textbook)}</p>
-    <div class="focus-box"><strong>Exam focus</strong>${renderList(u.examFocus)}</div>
+    <div class="focus-box"><strong>🎯 Exam focus</strong>${renderList(u.examFocus)}</div>
     ${sections}
-    <nav style="display:flex;justify-content:space-between;margin-top:2rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+    <div class="checkpoint-card">
+      <div class="trophy" aria-hidden="true">🏆</div>
+      <h3>Unit ${id} checkpoint</h3>
+      <p>${qCount} questions — test everything from this unit before moving on.</p>
+      ${best != null ? `<p class="best">Personal best: ${best}%</p>` : ""}
+      <a href="#/study/${id}/quiz" class="btn btn-primary">Start unit quiz</a>
+    </div>
+    <nav class="unit-nav">
       ${prev ? `<a href="#/study/${prev.id}">← ${esc(prev.title)}</a>` : "<span></span>"}
       ${next ? `<a href="#/study/${next.id}">${esc(next.title)} →</a>` : "<span></span>"}
     </nav>
+  `,
+    "#/study",
+  );
+}
+
+let unitQuizState = null;
+
+function unitQuizView(unitId) {
+  const u = DATA.units.find((x) => x.id === unitId);
+  if (!u) return `<p class="lead">Unit not found.</p>`;
+  const pool = questionsForUnit(unitId);
+  if (!unitQuizState || unitQuizState.unitId !== unitId) {
+    unitQuizState = {
+      unitId,
+      pool: shuffle(pool),
+      index: 0,
+      selected: null,
+      score: 0,
+      finished: false,
+    };
+  }
+  const qs = unitQuizState;
+  const q = qs.finished ? null : qs.pool[qs.index];
+  const progressPct = qs.pool.length
+    ? Math.round((qs.index / qs.pool.length) * 100)
+    : 0;
+
+  if (qs.finished) {
+    const pct = Math.round((qs.score / qs.pool.length) * 100);
+    const prevBest = progress.unitQuizBest?.[String(unitId)] ?? 0;
+    if (pct > prevBest) {
+      progress.unitQuizBest = { ...progress.unitQuizBest, [String(unitId)]: pct };
+      saveProgress();
+    }
+    const emoji = pct >= 80 ? "🎉" : pct >= 50 ? "💪" : "📚";
+    return shell(
+      `
+      <a class="back-link" href="#/study/${unitId}">← Back to ${esc(u.title)}</a>
+      <div class="quiz-panel result-card">
+        <p class="result-emoji">${emoji}</p>
+        <h2 class="page-title">${esc(u.title)} complete!</h2>
+        <p class="lead">You scored <strong>${qs.score} / ${qs.pool.length}</strong> (${pct}%)</p>
+        <p class="lead">${pct >= 70 ? "Great work — this unit is solid." : "Review the notes and try again."}</p>
+        <div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem">
+          <button type="button" class="btn btn-primary" id="unit-quiz-retry">Try again</button>
+          <a href="#/study/${unitId}" class="btn btn-outline" style="text-align:center;text-decoration:none">Back to notes</a>
+        </div>
+      </div>
+    `,
+      "#/study",
+    );
+  }
+
+  if (!q) {
+    return shell(
+      `<p class="lead">No questions for this unit yet.</p>`,
+      "#/study",
+    );
+  }
+
+  return shell(
+    `
+    <a class="back-link" href="#/study/${unitId}">← Exit quiz</a>
+    <p class="unit-tag" style="margin:0;font-weight:800;color:var(--purple)">${esc(u.title)} checkpoint</p>
+    <div class="quiz-progress"><div class="quiz-progress-bar" style="width:${progressPct}%"></div></div>
+    <p class="lead">Question ${qs.index + 1} of ${qs.pool.length}</p>
+    <div class="quiz-panel">
+      <h2 style="font-size:1.05rem;font-weight:700;line-height:1.4;margin:0">${esc(q.question)}</h2>
+      ${q.options
+        .map((opt, i) => {
+          let cls = "quiz-opt";
+          if (qs.selected !== null) {
+            if (i === q.correctIndex) cls += " correct";
+            else if (i === qs.selected) cls += " wrong";
+          }
+          return `<button type="button" class="${cls}" data-unit-opt="${i}" ${qs.selected !== null ? "disabled" : ""}>${esc(opt)}</button>`;
+        })
+        .join("")}
+      ${
+        qs.selected !== null
+          ? `<p class="callout" style="margin-top:1rem"><strong>💡</strong> ${esc(q.explanation)}</p>
+             <button type="button" class="btn btn-dark" style="width:100%;margin-top:1rem" id="unit-quiz-next">${qs.index + 1 >= qs.pool.length ? "See results" : "Next question"}</button>`
+          : ""
+      }
+    </div>
   `,
     "#/study",
   );
@@ -344,19 +472,27 @@ function practiceView() {
 
 function render() {
   const hash = location.hash || "#/";
-  const route = hash.startsWith("#/study/") ? "#/study" : hash;
+  const study = parseStudyHash(hash);
+  const route = study || hash.startsWith("#/study/") ? "#/study" : hash;
   const view = document.getElementById("view");
   if (!view) return;
   if (!DATA) {
-    view.innerHTML = "<p class='lead'>Loading…</p>";
+    view.innerHTML = "<p class='lead loading-msg'>Loading…</p>";
     return;
   }
 
   let html;
-  if (hash.startsWith("#/study/")) {
-    const id = Number(hash.split("/")[2]);
-    html = unitView(id);
+  if (study?.quiz) {
+    html = unitQuizView(study.id);
+    view.innerHTML = html;
+    updateChrome("#/study");
+    bindUnitQuiz();
+    return;
+  }
+  if (study) {
+    html = unitView(study.id);
     view.innerHTML = shell(html, "#/study");
+    unitQuizState = null;
     bindUnit();
     return;
   }
@@ -394,6 +530,35 @@ function bindUnit() {
       saveProgress();
       render();
     });
+  });
+}
+
+function bindUnitQuiz() {
+  document.getElementById("unit-quiz-retry")?.addEventListener("click", () => {
+    const id = unitQuizState?.unitId;
+    unitQuizState = null;
+    location.hash = `#/study/${id}/quiz`;
+    render();
+  });
+  document.querySelectorAll("[data-unit-opt]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (unitQuizState.selected !== null) return;
+      const i = Number(btn.getAttribute("data-unit-opt"));
+      const q = unitQuizState.pool[unitQuizState.index];
+      unitQuizState.selected = i;
+      if (i === q.correctIndex) unitQuizState.score++;
+      render();
+    });
+  });
+  document.getElementById("unit-quiz-next")?.addEventListener("click", () => {
+    if (unitQuizState.index + 1 >= unitQuizState.pool.length) {
+      unitQuizState.finished = true;
+      unitQuizState.selected = null;
+    } else {
+      unitQuizState.index++;
+      unitQuizState.selected = null;
+    }
+    render();
   });
 }
 

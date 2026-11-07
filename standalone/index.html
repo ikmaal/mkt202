@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#7c6cf0" />
     <title>MKT202 Study</title>
     <script>
       (function () {
@@ -17,43 +18,48 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
   </head>
   <body>
     <div id="app">
-      <header>
-        <div class="header-inner">
-          <div class="header-row">
-            <div class="brand-block">
-              <div class="logo" aria-hidden="true">M</div>
-              <div>
-                <p class="brand-title">MKT202 Study</p>
-                <p class="brand-sub">Marketing Management · Jul ’26 summary</p>
-              </div>
-            </div>
-            <div id="countdown" class="countdown" aria-live="polite"></div>
+      <div class="app-bg" aria-hidden="true"></div>
+      <header class="top-bar">
+        <div class="top-bar-inner">
+          <div class="avatar" aria-hidden="true">📚</div>
+          <div class="greet-block">
+            <p class="greeting">Hello, student</p>
+            <p class="progress-line">
+              Progress: <strong id="header-pct">0%</strong>
+            </p>
           </div>
-          <nav class="tabs" aria-label="Main">
-            <a href="#/" data-route="#/">Home</a>
-            <a href="#/study" data-route="#/study">Study</a>
-            <a href="#/quiz" data-route="#/quiz">Quiz</a>
-            <a href="#/flashcards" data-route="#/flashcards">Flashcards</a>
-            <a href="#/practice" data-route="#/practice">Practice</a>
-          </nav>
+          <div id="countdown" class="pill-badge" aria-live="polite"></div>
         </div>
       </header>
       <main id="view">
-        <p class="lead" style="padding: 2rem">Loading…</p>
+        <p class="lead loading-msg">Loading your study space…</p>
       </main>
-      <footer>
-        Content aligned to MKT202 July ’26 concept summary · Also revise
-        iSmartGuide, Kotler 16e &amp; past papers
-      </footer>
+      <nav class="bottom-nav" aria-label="Main">
+        <a href="#/" data-route="#/" class="nav-item"
+          ><span class="nav-icon" aria-hidden="true">🏠</span><span>Home</span></a
+        >
+        <a href="#/study" data-route="#/study" class="nav-item"
+          ><span class="nav-icon" aria-hidden="true">📖</span><span>Units</span></a
+        >
+        <a href="#/quiz" data-route="#/quiz" class="nav-item"
+          ><span class="nav-icon" aria-hidden="true">⚡</span><span>Quiz</span></a
+        >
+        <a href="#/flashcards" data-route="#/flashcards" class="nav-item"
+          ><span class="nav-icon" aria-hidden="true">🃏</span><span>Cards</span></a
+        >
+        <a href="#/practice" data-route="#/practice" class="nav-item"
+          ><span class="nav-icon" aria-hidden="true">✍️</span><span>Practice</span></a
+        >
+      </nav>
     </div>
-    <script src="data.js?v=3"></script>
-    <script src="app.js?v=3"></script>
+    <script src="data.js?v=4"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>

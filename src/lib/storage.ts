@@ -5,6 +5,7 @@ export type Progress = {
   sectionsRead: Record<string, boolean>;
   flashcardKnown: Record<string, boolean>;
   quizBest: Record<string, number>;
+  unitQuizBest: Record<string, number>;
   lastVisit: string;
 };
 
@@ -13,6 +14,7 @@ const defaultProgress = (): Progress => ({
   sectionsRead: {},
   flashcardKnown: {},
   quizBest: {},
+  unitQuizBest: {},
   lastVisit: new Date().toISOString(),
 });
 
