@@ -13,6 +13,7 @@ function stripTypes(ts) {
     .replace(/: Flashcard\[\]/g, "")
     .replace(/: QuizQuestion\[\]/g, "")
     .replace(/: ScenarioQuestion\[\]/g, "")
+    .replace(/: ExamPaper\[\]/g, "")
     .replace(/: string\[\]/g, "");
 }
 
@@ -41,6 +42,7 @@ const revisionSources = await loadModule("src/data/units.ts", "revisionSources")
 const flashcards = await loadModule("src/data/flashcards.ts", "flashcards");
 const quizQuestions = await loadModule("src/data/quizzes.ts", "quizQuestions");
 const scenarioQuestions = await loadModule("src/data/quizzes.ts", "scenarioQuestions");
+const pastExamPapers = await loadModule("src/data/papers.ts", "pastExamPapers");
 
 const payload = {
   examDate: "2026-11-11T09:00:00+08:00",
@@ -49,9 +51,19 @@ const payload = {
   flashcards,
   quizQuestions,
   scenarioQuestions,
+  pastExamPapers,
 };
 
 const outDir = path.join(root, "standalone");
+const papersOut = path.join(outDir, "papers");
+fs.mkdirSync(papersOut, { recursive: true });
+for (const paper of pastExamPapers) {
+  const src = path.join(root, "papers", paper.file);
+  if (!fs.existsSync(src)) {
+    throw new Error(`Missing PDF: ${src}`);
+  }
+  fs.copyFileSync(src, path.join(papersOut, paper.file));
+}
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(
   path.join(outDir, "data.json"),

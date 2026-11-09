@@ -10,6 +10,7 @@ function loadProgress() {
       flashcardKnown: {},
       quizBest: {},
       unitQuizBest: {},
+      papersOpened: {},
       ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
     };
   } catch {
@@ -18,6 +19,7 @@ function loadProgress() {
       flashcardKnown: {},
       quizBest: {},
       unitQuizBest: {},
+      papersOpened: {},
     };
   }
 }
@@ -61,6 +63,12 @@ const UNIT_THEME = {
   4: "unit-coral",
   5: "unit-indigo",
   6: "unit-mint",
+};
+
+const PAPER_STYLE = {
+  "jan-2026": "paper-violet",
+  "jul-2025": "paper-sunset",
+  "jan-2025": "paper-mint",
 };
 
 function parseStudyHash(hash) {
@@ -142,6 +150,12 @@ function homeView() {
           </a>`,
       )
       .join("")}
+    <div class="promo-papers">
+      <a href="#/papers">
+        <span><strong>Past year exam papers</strong><br /><span class="lead" style="font-size:0.8rem">${DATA.pastExamPapers?.length ?? 0} SUSS POE papers (PDF)</span></span>
+        <span aria-hidden="true">📄</span>
+      </a>
+    </div>
   `,
     "#/",
   );
@@ -445,6 +459,59 @@ function rebuildFcDeck() {
 let practiceIndex = 0;
 let practiceRevealed = false;
 
+function papersView() {
+  const papers = DATA.pastExamPapers || [];
+  return shell(
+    `
+    <section class="papers-hero">
+      <p class="tag" style="font-size:0.65rem;font-weight:800;text-transform:uppercase;opacity:0.9">SUSS MKT202</p>
+      <h2>Past year papers</h2>
+      <p>Open-book case exams — read the PDF, practise under 2 hours, then check your notes.</p>
+    </section>
+    <div class="tips-box">
+      <strong>How to use these papers</strong>
+      Skim question parts first, outline frameworks (STP, 4Ps, IMC, etc.), then write typed answers as in Examena.
+    </div>
+    ${papers
+      .map((p) => {
+        const style = PAPER_STYLE[p.id] || "paper-violet";
+        return `
+      <article class="paper-card" id="paper-${esc(p.id)}">
+        <div class="paper-card-head ${style}">
+          ${p.badge ? `<span class="paper-badge">${esc(p.badge)}</span>` : ""}
+          <h3>${esc(p.sitting)}</h3>
+          <p class="paper-meta">${esc(p.examDate)} · ${esc(p.duration)} · ${p.totalMarks} marks</p>
+        </div>
+        <div class="paper-card-body">
+          <p class="paper-format">${esc(p.format)}</p>
+          ${p.cases
+            .map(
+              (c) => `
+            <div class="case-block">
+              <h4>${esc(c.title)}</h4>
+              <p class="case-brand">${esc(c.brand)}</p>
+              <ul>${c.parts.map((part) => `<li>${esc(part)}</li>`).join("")}</ul>
+            </div>`,
+            )
+            .join("")}
+          ${
+            p.tips?.length
+              ? `<p class="lead" style="font-size:0.8rem"><strong>Tips:</strong> ${esc(p.tips.join(" "))}</p>`
+              : ""
+          }
+          <div class="paper-actions">
+            <a href="papers/${encodeURIComponent(p.file)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-paper-id="${esc(p.id)}">Open full paper (PDF)</a>
+            <a href="#/study" class="btn btn-ghost">Revise units first</a>
+          </div>
+        </div>
+      </article>`;
+      })
+      .join("")}
+  `,
+    "#/papers",
+  );
+}
+
 function practiceView() {
   const q = DATA.scenarioQuestions[practiceIndex];
   return shell(
@@ -515,6 +582,12 @@ function render() {
       html = practiceView();
       view.innerHTML = shell(html, route);
       bindPractice();
+      return;
+    case "#/papers":
+      html = papersView();
+      view.innerHTML = html;
+      updateChrome("#/papers");
+      bindPapers();
       return;
     default:
       html = homeView();
@@ -640,6 +713,16 @@ function bindFlashcards() {
   document.getElementById("fc-next")?.addEventListener("click", () => step(1));
   document.getElementById("fc-learning")?.addEventListener("click", () => step(1, false));
   document.getElementById("fc-got")?.addEventListener("click", () => step(1, true));
+}
+
+function bindPapers() {
+  document.querySelectorAll("[data-paper-id]").forEach((a) => {
+    a.addEventListener("click", () => {
+      const id = a.getAttribute("data-paper-id");
+      progress.papersOpened = { ...progress.papersOpened, [id]: true };
+      saveProgress();
+    });
+  });
 }
 
 function bindPractice() {

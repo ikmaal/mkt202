@@ -33,6 +33,7 @@ npm run dev
 - **Quiz** — multiple-choice with explanations
 - **Flashcards** — flip cards, shuffle, track mastery (saved in browser)
 - **Practice** — scenario questions with model answers
+- **Papers** — past SUSS POE PDFs with question breakdowns
 
 Progress is stored in `localStorage` on your device.
 
